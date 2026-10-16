@@ -11,6 +11,10 @@ waiting: transmit_now(slot) -> True or False. Afterwards it hears how it went:
 on_success(slot) when the ACK came back, on_failure(slot) when it did not.
 (A node cannot tell a collision from a bit error.)
 
+STATUS IN THIS EXAMPLE: solved. This is what a group's file could look like at the
+end of the MM6 session. What students were handed at the start is kept in
+instructor/starters/mm6_mac.py.
+
 Available in every MAC:
     self.index     this node's number, 0 .. n_nodes-1
     self.n_nodes   number of nodes sharing the channel
@@ -49,7 +53,8 @@ class SlottedAloha(MAC):
         self.p = p
 
     def transmit_now(self, slot):
-        raise NotImplementedError("Part B: implement slotted ALOHA")
+        # An independent coin flip in every slot: no memory of earlier slots.
+        return self.rng.random() < self.p
 
 
 # =============================================================================
@@ -64,9 +69,13 @@ class GroupedAloha(MAC):
     def __init__(self, index, n_nodes, rng, group_a=4):
         super().__init__(index, n_nodes, rng)
         self.group_a = group_a
+        self.in_a = index < group_a
+        group_size = group_a if self.in_a else n_nodes - group_a
+        self.p = 1.0 / group_size           # optimal p inside the group (Lecture 6)
 
     def transmit_now(self, slot):
-        raise NotImplementedError("Part C2")
+        my_slot = (slot % 2 == 0) if self.in_a else (slot % 2 == 1)   # TDMA between groups
+        return my_slot and self.rng.random() < self.p                 # ALOHA inside a group
 
 
 # =============================================================================
@@ -78,8 +87,21 @@ class BackoffAloha(MAC):
     number of slots between 0 and 2**k - 1 before trying again (cap k at 10).
     After a success, start again from k = 0."""
 
+    def __init__(self, index, n_nodes, rng):
+        super().__init__(index, n_nodes, rng)
+        self.failures = 0           # k: failures in a row
+        self.next_allowed = 0       # first slot in which we may try again
+
     def transmit_now(self, slot):
-        raise NotImplementedError("Part C3")
+        return slot >= self.next_allowed
+
+    def on_success(self, slot):
+        self.failures = 0
+
+    def on_failure(self, slot):
+        self.failures = min(self.failures + 1, 10)
+        wait = int(self.rng.integers(0, 2 ** self.failures))     # 0 .. 2**k - 1 slots
+        self.next_allowed = slot + 1 + wait
 
 
 # =============================================================================
@@ -87,5 +109,24 @@ class BackoffAloha(MAC):
 # =============================================================================
 
 class MyMAC(MAC):
+    """Our design: the streamer (last node) owns every even slot; everyone else uses
+    back-off ALOHA in the odd slots."""
+
+    def __init__(self, index, n_nodes, rng):
+        super().__init__(index, n_nodes, rng)
+        self.streamer = index == n_nodes - 1
+        self.failures = 0
+        self.next_allowed = 0
+
     def transmit_now(self, slot):
-        raise NotImplementedError("Challenge")
+        if self.streamer:
+            return slot % 2 == 0
+        return slot % 2 == 1 and slot >= self.next_allowed
+
+    def on_success(self, slot):
+        self.failures = 0
+
+    def on_failure(self, slot):
+        if not self.streamer:
+            self.failures = min(self.failures + 1, 10)
+            self.next_allowed = slot + 1 + int(self.rng.integers(0, 2 ** self.failures))

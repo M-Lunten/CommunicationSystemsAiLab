@@ -7,8 +7,8 @@ import math
 import pytest
 
 from commsim import FrameFormat, point_to_point, shared_uplink
-from commsim.reference import StopAndWaitReceiver, StopAndWaitSender
-from instructor.solutions.mm6_mac import GroupedAloha, RoundRobinTDMA, SlottedAloha
+from commsim.reference import (GroupedAloha, RoundRobinTDMA, SlottedAloha, StopAndWaitReceiver,
+                               StopAndWaitSender)
 from student.mm5_link import UtopiaReceiver, UtopiaSender
 
 

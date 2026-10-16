@@ -1,5 +1,9 @@
-"""MM6 reference solutions (instructors only; not handed out before the session)."""
-from commsim import MAC
+"""Reference MACs from Lecture 6.
+
+Released after the MM6 session, so later labs can use a working MAC even if a
+group's own MM6 code has a bug.
+"""
+from ..node import MAC
 
 
 class AlwaysTransmit(MAC):

@@ -1,0 +1,122 @@
+{
+ "A0": {
+  "hashes": [
+   "d397008c2c5f4db5f8e8"
+  ],
+  "format": "a list of three words"
+ },
+ "A1": {
+  "hashes": [
+   "02ffc4209940d4f1b25e",
+   "294f38db4308b4502b65",
+   "72426d5e4d5992adaf8c",
+   "73ebbfce3cb5cd9e545e",
+   "eed8a6f4ab7155e4608a"
+  ],
+  "format": "a layer number",
+  "decimals": 0
+ },
+ "A3a": {
+  "hashes": [
+   "9fc8d440295610031acd",
+   "e98036f1117634262554"
+  ],
+  "format": "yes or no"
+ },
+ "A3b": {
+  "hashes": [
+   "12457db00aa705208bee",
+   "13a950ea65e6c2d36af3",
+   "153c7fd8f092067a6677",
+   "35d140837458f44b727f",
+   "3a348ee42536eb60d349",
+   "433f732576005bfcda70",
+   "5f51af5d4141636946b8",
+   "6d412914d17c76fa52f8",
+   "a3750cc58c095f874b66"
+  ],
+  "format": "the name of a layer",
+  "decimals": 0
+ },
+ "A3c": {
+  "hashes": [
+   "4456e65b0ff2fd072708",
+   "7b48d4ebae3e0eb72546"
+  ],
+  "format": "yes or no"
+ },
+ "A4a": {
+  "hashes": [
+   "40d5132c3e815a8e0c88",
+   "5f8ede0c6d7838fbcfe9",
+   "6df54a09d223b76d9a7e"
+  ],
+  "format": "a number of bytes",
+  "decimals": 0
+ },
+ "A4b": {
+  "hashes": [
+   "faff4f82bc4f517f7eff"
+  ],
+  "format": "a fraction with two decimals, e.g. 0.42",
+  "decimals": 2
+ },
+ "A5": {
+  "hashes": [
+   "1d9853323284769e8079",
+   "36190c961c231922596d",
+   "4ecf80d7f5fe38801288",
+   "84b8378259c72c7c264e",
+   "9310d3139891282917f0",
+   "9c69c04a78a700897dfe",
+   "aa5e3e308ed3dbb017cc",
+   "d7380513773ecd17da08"
+  ],
+  "format": "\"rise\" or \"fall\""
+ },
+ "B1": {
+  "hashes": [
+   "5708795b0b5438d5452a",
+   "e63c1c0a76c9c328f254",
+   "e93fc5609c1631ca2ada"
+  ],
+  "format": "a number of bits",
+  "decimals": 0
+ },
+ "B2": {
+  "hashes": [
+   "499558a74697cb3f9ac1"
+  ],
+  "format": "a number of transmissions",
+  "decimals": 0
+ },
+ "B3": {
+  "hashes": [
+   "53fedb63a372ffcffe9b",
+   "70c71fd396444f91d023",
+   "7683252903852d2bdc29",
+   "83174c6b3e2675cee247",
+   "b00c2ef8446eb44cbab7"
+  ],
+  "format": "\"LL\", \"HL\" or \"HL + LL\""
+ },
+ "B4": {
+  "hashes": [
+   "2ee9c63d0fdf7f1d530f",
+   "9a4970ecdc1d87d80de8"
+  ],
+  "format": "yes or no"
+ },
+ "B5": {
+  "hashes": [
+   "41571f3d0dc75a4f23fa",
+   "6a7e65e69b3fe63705d0",
+   "870dcb0b7cba7bcc7cd3",
+   "ba840391412323bcab1f",
+   "d9cc0a51cfe8d5896858",
+   "db29296311c70bb15273",
+   "df3e604deab4fde34a21"
+  ],
+  "format": "\"increase\", \"decrease\" or \"unchanged\""
+ }
+}

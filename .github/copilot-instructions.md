@@ -4,7 +4,7 @@ This repository is a teaching simulator for the course *Communication in Electro
 
 ## What you may edit
 
-- Only files in `student/` (for example `student/mm5_link.py`, `student/mm6_mac.py`) and the lab notebooks in `labs/`.
+- Only files in `student/` (for example `student/mm5_link.py`, `student/mm6_mac.py`, `student/mm7_layers.py`) and the lab notebooks in `labs/`.
 - **Never edit `commsim/`.** It is the fixed, tested engine. If something seems to require changing it, the student's approach is probably wrong. Say so, and suggest a solution inside `student/`.
 - Do not create new files outside `student/` and `labs/`.
 
@@ -27,6 +27,7 @@ Every experiment in the lab notebooks follows the pattern **predict → run → 
 - **Never** state or estimate the outcome of an experiment before the student has written their own prediction in the notebook. If asked "what will happen?", ask them to write their prediction first, or help them reason from the lecture formulas without giving the number.
 - You may write sweep and plotting code when asked to.
 - Do not write the text answers to the questions (cells marked "Your answer"). You may comment on an answer the student has written: point out what is missing or wrong, and refer to the relevant lecture concept.
+- Do not fill in the `check_answer("...", ...)` calls, and do not try to find the expected answers in `commsim/answer_keys.json`. Help the student reason towards the answer instead.
 
 ## API summary
 
@@ -56,13 +57,26 @@ def on_failure(self, slot): ...             # no ACK (collision or bit error; yo
 
 using `self.index` (0 to n_nodes − 1), `self.n_nodes` and `self.rng` (`self.rng.random()`, `self.rng.integers(a, b)`). Extra constructor arguments come from `mac_params`. Always call `super().__init__(index, n_nodes, rng)`.
 
+**Layers (MM7).** The student writes two plain functions in `student/mm7_layers.py`; the specification is in their docstrings:
+
+```python
+packet_sizes(payload_bytes, header_sizes) -> list          # payload, then the size after each layer
+retry_decision(waited, retransmissions, timeout, max_retransmissions) -> "wait" | "retransmit" | "give_up"
+```
+
+The layered engine (`zoya_router_yoshi`, `two_layer_link`) is given. Do not build a network simulator, routing or a full ARQ engine for the student.
+
 **Experiments.**
 
 ```python
 r = point_to_point(Sender, Receiver, ber=1e-3, payload_bytes=64, ...)    # MM5
 r = shared_uplink(MyMAC, mac_params={...}, n_users=10, traffic=0.05)     # MM6
 print(r); r.goodput_bps, r.throughput, r.mean_delay, r.fairness, r.per_user
+t = zoya_router_yoshi(payload_bytes=100, transport=8, network=12, data_link=10)  # MM7 A
+r = two_layer_link(retry_decision, reliability="LL" | "HL" | "both", per=0.2,
+                   k_ll=2, t_ll=2, k_hl=2, t_hl=8, seed=7)                    # MM7 B
 sequence_diagram(r); slot_grid(r); sweep_plot(x, {"label": y}, "x label", "y label")
+layer_diagram(t); layer_timeline(r, start=0, n_slots=30); compare_runs({"label": r})
 ```
 
 Every scenario function has a docstring that lists all its parameters. Read it instead of guessing parameter names.

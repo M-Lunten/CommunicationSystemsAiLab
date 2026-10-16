@@ -1,5 +1,6 @@
 """Plots for the labs: sequence diagrams (MM5), slot grids (MM6) and parameter sweeps."""
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 
 SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"]
@@ -120,4 +121,176 @@ def sweep_plot(x, curves, xlabel, ylabel, title=None, logx=False, logy=False, ax
     _style(ax)
     if len(curves) > 1:
         ax.legend(frameon=False, fontsize=9)
+    return ax
+
+
+# ---------------------------------------------------------------- MM7: layering
+
+LAYER_COLOURS = {7: "#4a3aa7", 6: "#e87ba4", 5: "#eda100", 4: "#2a78d6", 3: "#eb6834",
+                 2: "#1baf7a", 1: "#8a8984"}
+PAYLOAD_COLOUR = "#c9c8c3"
+
+
+def layer_diagram(trace, ax=None):
+    """Zoya, the router and Yoshi as protocol stacks, the path of the packet through them,
+    and the packet as it looks on each link (zoya_router_yoshi runs)."""
+    from .stack import LAYERS, SHORT
+    if ax is None:
+        fig = plt.figure(figsize=(11, 7.2))
+        ax = fig.add_axes([0.02, 0.30, 0.96, 0.66])
+        bar_ax = fig.add_axes([0.10, 0.04, 0.84, 0.20])
+    else:
+        bar_ax = None
+    cols = {"Zoya": 0.0, "Router": 3.2, "Yoshi": 6.4}
+    w, h = 1.3, 0.72
+    for node, x in cols.items():
+        top = trace.highest_layer[node]
+        for layer in range(1, top + 1):
+            ax.add_patch(plt.Rectangle((x - w / 2, layer - h / 2), w, h, color=LAYER_COLOURS[layer],
+                                       alpha=0.18, linewidth=0))
+            ax.text(x, layer, f"L{layer} {LAYERS[layer]}", ha="center", va="center", fontsize=8.5,
+                    color=INK)
+        ax.text(x, 7.75, node, ha="center", va="bottom", fontsize=12, fontweight="bold", color=INK)
+    # the path of the packet
+    rx = cols["Router"]
+    path = ([(cols["Zoya"] + w / 2 + 0.08, 7.3), (cols["Zoya"] + w / 2 + 0.08, 0.5),
+             (rx - w / 2 - 0.08, 0.5), (rx - w / 2 - 0.08, 3.3), (rx + w / 2 + 0.08, 3.3),
+             (rx + w / 2 + 0.08, 0.5), (cols["Yoshi"] - w / 2 - 0.08, 0.5),
+             (cols["Yoshi"] - w / 2 - 0.08, 7.3)])
+    for (x0, y0), (x1, y1) in zip(path, path[1:]):
+        ax.annotate("", xy=(x1, y1), xytext=(x0, y0),
+                    arrowprops=dict(arrowstyle="-|>", color=MUTED, linewidth=1.6, shrinkA=0, shrinkB=0))
+    ax.text((cols["Zoya"] + rx) / 2, 0.32, "link 1", ha="center", va="top", fontsize=9, color=MUTED)
+    ax.text((rx + cols["Yoshi"]) / 2, 0.32, "link 2", ha="center", va="top", fontsize=9, color=MUTED)
+    # what happens at each layer
+    for s in trace.steps:
+        if s.action in ("send", "receive"):
+            continue
+        x = cols[s.node]
+        if s.node == "Zoya":
+            tx, ha = x - w / 2 - 0.1, "right"
+        elif s.node == "Yoshi":
+            tx, ha = x + w / 2 + 0.1, "left"
+        else:
+            tx, ha = x + w / 2 + 0.25, "left"
+        if s.action == "pass":
+            text = f"{s.size} B"
+        elif s.action in ("add", "remove"):
+            text = f"{s.delta:+d} B -> {s.size} B"
+        else:
+            text = s.note.replace(", ", "\n", 1)
+        y = s.layer + (0.18 if (s.node == "Router" and s.action == "remove") else
+                       -0.18 if (s.node == "Router" and s.action == "add") else 0)
+        if s.node == "Router" and s.layer == 3:
+            y += 0.55
+        ax.text(tx, y, text, ha=ha, va="center", fontsize=8,
+                color=LAYER_COLOURS[s.layer] if s.action in ("add", "remove") else MUTED)
+    ax.set_xlim(-2.6, 9.0)
+    ax.set_ylim(0.0, 8.2)
+    ax.axis("off")
+    ax.set_title(f"{trace.payload_bytes} B of data from Zoya to Yoshi:  {trace.packet_bytes} B on link 1, "
+                 f"payload efficiency {trace.efficiency:.2f}", color=INK, fontsize=11, loc="left")
+    if bar_ax is not None:
+        _packet_bars(trace, bar_ax, SHORT)
+    return ax
+
+
+def _packet_bars(trace, ax, short):
+    before = {h.layer: h for h in trace.links["link 1"]}
+    rewritten = {s.layer for s in trace.steps if s.node == "Router" and s.action == "add"}
+    for row, link in enumerate(("link 1", "link 2")):
+        x = 0
+        for hdr in trace.links[link]:
+            hatch = None
+            if link == "link 2":
+                if hdr.layer in rewritten:
+                    hatch = "//"           # a new header for this link
+                elif before[hdr.layer].fields != hdr.fields:
+                    hatch = ".."           # same header, one field updated
+            ax.barh(row, hdr.size, left=x, color=LAYER_COLOURS[hdr.layer], alpha=0.85, hatch=hatch,
+                    edgecolor="white", height=0.6)
+            ax.text(x + hdr.size / 2, row, f"{short[hdr.layer]} {hdr.size}", ha="center", va="center",
+                    fontsize=7.5, color="white", fontweight="bold")
+            x += hdr.size
+        ax.barh(row, trace.payload_bytes, left=x, color=PAYLOAD_COLOUR, height=0.6, edgecolor="white")
+        ax.text(x + trace.payload_bytes / 2, row, f"data {trace.payload_bytes}", ha="center",
+                va="center", fontsize=8, color=INK)
+    ax.set_yticks([0, 1])
+    ax.set_yticklabels(["link 1", "link 2"], fontsize=9, color=INK)
+    ax.invert_yaxis()
+    ax.set_xlabel("bytes on the link.  On link 2:  //  new header written by the router,"
+                  "  ..  same header, a field updated", color=MUTED, fontsize=9)
+    for side in ("top", "right", "left"):
+        ax.spines[side].set_visible(False)
+    ax.spines["bottom"].set_color(MUTED)
+    ax.tick_params(colors=MUTED, labelsize=8, length=0)
+
+
+EVENT_STYLE = {   # kind: (colour, legend label)
+    "hl_send": ("#2a78d6", "HL sends new packet"),
+    "hl_retx": ("#eda100", "HL retransmission"),
+    "hl_retx_premature": ("#d03b3b", "HL retransmission while LL still busy"),
+    "hl_ack": ("#008300", "HL ACK received"),
+    "hl_give_up": (INK, "gives up"),
+    "tx_ok": (STATUS["ok"], "LL frame arrives"),
+    "tx_lost": (STATUS["lost"], "LL frame lost"),
+    "ll_give_up": (INK, None),
+    "deliver": (STATUS["ok"], None),
+    "duplicate": ("#eb6834", "duplicate at Yoshi's HL"),
+}
+
+
+def layer_timeline(results, n_slots=30, start=0, ax=None):
+    """One row per layer (Zoya HL, Zoya LL, Yoshi LL, Yoshi HL), one column per slot
+    (two_layer_link runs). Labels are HL packet numbers; 3' is the HL's retransmission of
+    packet 3, A3 is the HL ACK for packet 3. Small marks under an LL cell: an LL ACK sent
+    (green: arrived, grey x: lost)."""
+    rows = ["Zoya HL", "Zoya LL", "Yoshi LL", "Yoshi HL"]
+    slots = range(start, start + n_slots)
+    cells, marks = {}, {}
+    for e in results.events:
+        if e.slot not in slots or e.kind == "ll_ack":
+            continue
+        if e.kind in ("ack_ok", "ack_lost"):
+            marks[(e.row, e.slot)] = e.kind
+        else:
+            cells.setdefault((e.row, e.slot), []).append(e)
+    if ax is None:
+        _, ax = plt.subplots(figsize=(min(15, 0.42 * n_slots + 2.5), 3.4))
+    for (row, slot), events in cells.items():
+        r, col = rows.index(row), slot - start
+        width = 0.9 / len(events)
+        for i, e in enumerate(events):
+            colour = EVENT_STYLE[e.kind][0]
+            x = col + 0.05 + i * width
+            ax.add_patch(plt.Rectangle((x, r + 0.08), width, 0.72, color=colour,
+                                       alpha=0.55 if e.kind == "tx_lost" else 0.9))
+            label = "x" + e.label if e.kind in ("hl_give_up", "ll_give_up") else e.label
+            ax.text(x + width / 2, r + 0.44, label, ha="center", va="center",
+                    fontsize=7 if len(events) == 1 else 6, color="white", fontweight="bold")
+    for (row, slot), kind in marks.items():
+        r, col = rows.index(row), slot - start
+        ax.plot(col + 0.5, r + 0.9, marker="^" if kind == "ack_ok" else "x", markersize=4,
+                color=STATUS["ok"] if kind == "ack_ok" else STATUS["lost"])
+    for r in range(1, len(rows)):
+        ax.axhline(r, color=GRID, linewidth=0.8)
+    ax.axhline(2, color=MUTED, linewidth=1.2, linestyle="--")
+    ax.set_xlim(0, n_slots)
+    ax.set_ylim(len(rows), 0)
+    ax.set_yticks([i + 0.45 for i in range(len(rows))])
+    ax.set_yticklabels(rows, fontsize=9, color=INK)
+    step = max(1, n_slots // 15)
+    ax.set_xticks([c + 0.5 for c in range(0, n_slots, step)])
+    ax.set_xticklabels([str(start + c) for c in range(0, n_slots, step)], fontsize=8, color=MUTED)
+    ax.set_xlabel("slot", color=MUTED)
+    for side in ax.spines.values():
+        side.set_visible(False)
+    ax.tick_params(length=0)
+    handles = [Patch(color=c, label=l) for c, l in EVENT_STYLE.values() if l]
+    handles += [Line2D([], [], marker="^", linestyle="none", color=STATUS["ok"], markersize=5,
+                       label="LL ACK sent, arrives"),
+                Line2D([], [], marker="x", linestyle="none", color=STATUS["lost"], markersize=5,
+                       label="LL ACK sent, lost")]
+    ax.legend(handles=handles, loc="upper left", bbox_to_anchor=(1.0, 1.0), frameon=False, fontsize=8)
+    ax.set_title(results.scenario, color=INK, fontsize=9.5, loc="left")
     return ax
