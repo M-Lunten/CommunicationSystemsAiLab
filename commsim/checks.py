@@ -136,3 +136,78 @@ def check_mm7_retry(retry_decision):
                       "sent too early, or too often?")
     print("\nAll checks passed." if ok else "\nFix the failing checks and run again.")
     return ok
+
+
+def check_mm8_dv(dv_update):
+    """Checks a distance-vector update (Lab MM8, question 1). Not on Problem 2: that is 1a."""
+    import copy
+    cases = [
+        ("1 picks the cheapest neighbour",
+         ("X", {"Y": 1, "Z": 4}, {"Y": {"X": 1, "Y": 0, "Z": 2, "W": 7},
+                                  "Z": {"X": 4, "Y": 2, "Z": 0, "W": 1}}),
+         ({"X": 0, "Y": 1, "Z": 3, "W": 5}, {"X": None, "Y": "Y", "Z": "Y", "W": "Z"}),
+         "for each destination, add the link cost to each neighbour's distance and keep the "
+         "smallest sum; the next hop is the neighbour that gave it."),
+        ("2 itself: distance 0, no next hop",
+         ("M", {"N": 3}, {"N": {"M": 3, "N": 0, "P": 2}}),
+         ({"M": 0, "N": 3, "P": 5}, {"M": None, "N": "N", "P": "N"}),
+         "a router reaches itself at distance 0 with next hop None, whatever its neighbours say."),
+        ("3 ties and unknown destinations",
+         ("X", {"P": 2, "Q": 1}, {"P": {"T": 1}, "Q": {"T": 2, "U": 4}}),
+         ({"X": 0, "T": 3, "U": 5}, {"X": None, "T": "P", "U": "Q"}),
+         "on a tie keep the neighbour that comes first in link_costs (use < , not <=), and "
+         "only use neighbours whose vector contains the destination."),
+        ("4 no neighbours",
+         ("Solo", {}, {}),
+         ({"Solo": 0}, {"Solo": None}),
+         "with no neighbours, the table only contains the router itself."),
+    ]
+    ok = True
+    for name, args, (want_d, want_h), hint in cases:
+        given = copy.deepcopy(args)
+        try:
+            out = dv_update(*given)
+        except NotImplementedError:
+            print("FAIL  dv_update is not implemented yet")
+            return False
+        if given != args:
+            ok &= _report(name, False, "changed its inputs", "build new dicts instead of changing "
+                          "link_costs or neighbour_vectors.")
+            continue
+        if not (isinstance(out, tuple) and len(out) == 2):
+            ok &= _report(name, False, f"returned {out!r}", "return a tuple (distances, next_hops).")
+            continue
+        dist, hops = out
+        good = dict(dist) == want_d and dict(hops) == want_h
+        ok &= _report(name, good, "right" if good else f"returned distances {dist}, next hops {hops}",
+                      hint)
+    print("\nAll checks passed." if ok else "\nFix the failing checks and run again.")
+    return ok
+
+
+def check_mm8_flow(advertised_window, may_send):
+    """Checks the two flow-control rules (Lab MM8, question 2)."""
+    from .flow import flow_control_link
+    ok = True
+    try:
+        aw = [(args, advertised_window(*args), want) for args, want in
+              (((64, 0), 64), ((64, 10), 54), ((64, 64), 0), ((8, 3), 5))]
+        ms = [(args, may_send(*args), want) for args, want in
+              (((0, 64), True), ((63, 64), True), ((64, 64), False), ((5, 0), False), ((70, 64), False))]
+    except NotImplementedError:
+        print("FAIL  advertised_window or may_send is not implemented yet")
+        return False
+    wrong = [f"advertised_window{a} returned {g!r}, expected {w!r}" for a, g, w in aw if g != w]
+    ok &= _report("1 advertised_window", not wrong, wrong[0] if wrong else "4 cases right",
+                  "the window is the free space in the receiver's buffer.")
+    wrong = [f"may_send{a} returned {g!r}, expected {w!r}" for a, g, w in ms if bool(g) != w]
+    ok &= _report("2 may_send", not wrong, wrong[0] if wrong else "5 cases right",
+                  "the sender may send while fewer than `window` packets are in flight.")
+    if ok:
+        r = flow_control_link(flow_control=(advertised_window, may_send), copies=8, n_packets=20_000)
+        good = r.dropped == 0 and r.processed == 20_000
+        ok &= _report("3 in the simulator", good,
+                      f"{r.dropped} dropped, {r.processed}/20000 processed",
+                      "with flow control, no packet should ever arrive at a full buffer.")
+    print("\nAll checks passed." if ok else "\nFix the failing checks and run again.")
+    return ok

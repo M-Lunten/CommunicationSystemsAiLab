@@ -3,6 +3,10 @@
 This is the only file you change in the MM7 lab (together with the lab notebook).
 The layer engine in commsim/ is given: here you only write two small functions, one
 for each part of the lab. Use Copilot if you like, but read what it writes.
+
+STATUS IN THIS EXAMPLE: solved. This is what a group's file could look like at the
+end of the MM7 session. What students were handed at the start is kept in
+instructor/starters/mm7_layers.py.
 """
 
 
@@ -26,7 +30,10 @@ def packet_sizes(payload_bytes, header_sizes):
 
     Then run check_mm7_encapsulation(packet_sizes) in the notebook.
     """
-    raise NotImplementedError("Part A4: implement packet_sizes")
+    sizes = [payload_bytes]                 # before any layer has added a header
+    for header in header_sizes:
+        sizes.append(sizes[-1] + header)    # this layer wraps everything from above
+    return sizes
 
 
 # =============================================================================
@@ -54,4 +61,8 @@ def retry_decision(waited, retransmissions, timeout, max_retransmissions):
 
     Then run check_mm7_retry(retry_decision) in the notebook.
     """
-    raise NotImplementedError("Part B: implement retry_decision")
+    if waited < timeout:
+        return "wait"                       # the ACK may still be on its way
+    if retransmissions < max_retransmissions:
+        return "retransmit"
+    return "give_up"                        # K retransmissions used up: report failure

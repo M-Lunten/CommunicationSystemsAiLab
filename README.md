@@ -7,6 +7,7 @@ The course simulator for **Communication in Electronic Systems**. One framework 
 | MM5 | stop-and-wait ARQ (link layer) | `student/mm5_link.py` |
 | MM6 | medium access control (MAC) | `student/mm6_mac.py` |
 | MM7 | a packet-size helper and a retry rule, used by a given layered stack | `student/mm7_layers.py` |
+| MM8 | a distance-vector update, an advertised window and a send rule | `student/mm8_network.py` |
 
 Each lab takes about **30 minutes**, after the regular exercises.
 
@@ -66,7 +67,15 @@ packet_sizes(payload_bytes, header_sizes)        # -> [payload, after layer 1, a
 retry_decision(waited, retransmissions, timeout, max_retransmissions)   # -> "wait" | "retransmit" | "give_up"
 ```
 
-and check short answers with `check_answer("A1", your_answer)`.
+**Routing and flow control (MM8)**: fill in three functions
+
+```python
+dv_update(me, link_costs, neighbour_vectors)     # -> (distances, next_hops)
+advertised_window(buffer_size, queued)           # -> free space in the receiver buffer
+may_send(in_flight, window)                      # -> True / False
+```
+
+Check short answers with `check_answer("A1", your_answer)` (MM7) or `check_answer("MM8-1a", ...)` (MM8).
 
 **Experiments**
 
@@ -75,10 +84,12 @@ r = point_to_point(MySender, MyReceiver, ber=1e-3)        # MM5: Alice -> Bob
 r = shared_uplink(MyMAC, n_users=10, traffic=0.05)        # MM6: users -> Basil
 t = zoya_router_yoshi(payload_bytes=100, network=12)      # MM7 A: Zoya -> router -> Yoshi
 r = two_layer_link(retry_decision, reliability="both", per=0.2, t_hl=4)   # MM7 B: HL over LL
+r = chain_routing(dv_update, poisoned_reverse=True)       # MM8 Q1: Zoya - R1 - R2 - R3 - Yoshi
+r = flow_control_link(copies=8, flow_control=(advertised_window, may_send))   # MM8 Q2
 print(r)                       # all metrics
 r.goodput_bps, r.throughput, r.mean_delay, r.fairness, r.per_user
 sequence_diagram(r); slot_grid(r); sweep_plot(x, {"label": y}, "x", "y")
-layer_diagram(t); layer_timeline(r); compare_runs({"label": r, ...})
+layer_diagram(t); layer_timeline(r); compare_runs({"label": r, ...}); routing_plot(r); flow_plot(r)
 ```
 
 Every scenario function has a docstring: hover over it in VS Code to see all parameters.

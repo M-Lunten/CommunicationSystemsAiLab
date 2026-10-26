@@ -4,7 +4,7 @@ This repository is a teaching simulator for the course *Communication in Electro
 
 ## What you may edit
 
-- Only files in `student/` (for example `student/mm5_link.py`, `student/mm6_mac.py`, `student/mm7_layers.py`) and the lab notebooks in `labs/`.
+- Only files in `student/` (for example `student/mm5_link.py`, `student/mm6_mac.py`, `student/mm7_layers.py`, `student/mm8_network.py`) and the lab notebooks in `labs/`.
 - **Never edit `commsim/`.** It is the fixed, tested engine. If something seems to require changing it, the student's approach is probably wrong. Say so, and suggest a solution inside `student/`.
 - Do not create new files outside `student/` and `labs/`.
 
@@ -64,7 +64,17 @@ packet_sizes(payload_bytes, header_sizes) -> list          # payload, then the s
 retry_decision(waited, retransmissions, timeout, max_retransmissions) -> "wait" | "retransmit" | "give_up"
 ```
 
-The layered engine (`zoya_router_yoshi`, `two_layer_link`) is given. Do not build a network simulator, routing or a full ARQ engine for the student.
+The layered engine (`zoya_router_yoshi`, `two_layer_link`) is given. Do not build a network simulator or a full ARQ engine for the student.
+
+**Routing and flow control (MM8).** Three plain functions in `student/mm8_network.py`, specified in their docstrings:
+
+```python
+dv_update(me, link_costs, neighbour_vectors) -> (distances, next_hops)   # one Bellman-Ford update
+advertised_window(buffer_size, queued) -> int                             # receiver: free buffer space
+may_send(in_flight, window) -> bool                                       # sender: room in the window?
+```
+
+The engines (`chain_routing`, `distance_vector`, `flow_control_link`) run them and handle rounds, infinity, poisoned reverse, timing and buffers. Do not reimplement those parts in `student/`. For question 2c, the student may ask for a sweep over `buffer_packets`; write it, but let them read off the answer.
 
 **Experiments.**
 
@@ -75,8 +85,12 @@ print(r); r.goodput_bps, r.throughput, r.mean_delay, r.fairness, r.per_user
 t = zoya_router_yoshi(payload_bytes=100, transport=8, network=12, data_link=10)  # MM7 A
 r = two_layer_link(retry_decision, reliability="LL" | "HL" | "both", per=0.2,
                    k_ll=2, t_ll=2, k_hl=2, t_hl=8, seed=7)                    # MM7 B
+r = chain_routing(dv_update, fail=("R3", "Yoshi"), poisoned_reverse=False)    # MM8 Q1
+r = flow_control_link(copies=4, rtt_us=10, buffer_packets=64,
+                      flow_control=(advertised_window, may_send))            # MM8 Q2
 sequence_diagram(r); slot_grid(r); sweep_plot(x, {"label": y}, "x label", "y label")
 layer_diagram(t); layer_timeline(r, start=0, n_slots=30); compare_runs({"label": r})
+routing_plot(r); flow_plot(r)
 ```
 
 Every scenario function has a docstring that lists all its parameters. Read it instead of guessing parameter names.

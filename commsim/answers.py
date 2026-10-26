@@ -11,8 +11,12 @@ _KEYS = Path(__file__).with_name("answer_keys.json")
 
 def normalise(answer, decimals=None):
     """Turn an answer into the canonical text that is hashed."""
+    if isinstance(answer, dict):
+        return ",".join(normalise(answer[k], decimals) for k in sorted(answer))
     if isinstance(answer, (list, tuple)):
-        return ",".join(normalise(a) for a in answer)
+        return ",".join(normalise(a, decimals) for a in answer)
+    if answer is None:
+        return "-"
     if isinstance(answer, bool):
         return "yes" if answer else "no"
     if decimals is not None:
@@ -21,6 +25,8 @@ def normalise(answer, decimals=None):
         except (TypeError, ValueError):
             pass
     text = " ".join(str(answer).strip().lower().replace("_", " ").replace("-", " ").split())
+    if text in ("", "\u2013", "\u2014"):
+        return "-"
     return text.replace(" + ", "+").replace(" +", "+").replace("+ ", "+")
 
 

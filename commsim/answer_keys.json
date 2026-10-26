@@ -118,5 +118,46 @@
    "df3e604deab4fde34a21"
   ],
   "format": "\"increase\", \"decrease\" or \"unchanged\""
+ },
+ "MM8-1a": {
+  "hashes": [
+   "c1a1d782ee2b098baf28"
+  ],
+  "format": "[[distances A..F], [next hops A..F]]"
+ },
+ "MM8-1b": {
+  "hashes": [
+   "e6fd0d1527e7045292bf"
+  ],
+  "format": "a number of rounds",
+  "decimals": 0
+ },
+ "MM8-1c": {
+  "hashes": [
+   "c0959a90e17a0e934c4e"
+  ],
+  "format": "a number of rounds",
+  "decimals": 0
+ },
+ "MM8-2a": {
+  "hashes": [
+   "f492cd4d325e55a87ed4"
+  ],
+  "format": "[capacity in Gbit/s, drop fraction]",
+  "decimals": 2
+ },
+ "MM8-2b": {
+  "hashes": [
+   "511b67dc3b87aaed18f9"
+  ],
+  "format": "[packets dropped, goodput in Gbit/s]",
+  "decimals": 2
+ },
+ "MM8-2c": {
+  "hashes": [
+   "76b36c12772b23ad513f"
+  ],
+  "format": "[goodput in Gbit/s, window in packets]",
+  "decimals": 2
  }
 }

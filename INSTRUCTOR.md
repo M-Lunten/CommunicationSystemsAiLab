@@ -1,6 +1,6 @@
 # CommSim: instructor overview
 
-*A pilot for MM5–MM7 of Communication in Electronic Systems, built to show how one simulation framework could grow with Part 2 of the course.*
+*A pilot for MM5–MM8 of Communication in Electronic Systems, built to show how one simulation framework could grow with Part 2 of the course.*
 
 ## The idea
 
@@ -11,8 +11,8 @@ Each lab takes **about 30 minutes**, after the regular exercises. The pieces stu
 ## Why this is not "just prompting"
 
 - **Small editable part.** Students edit 20–50 lines in one file. A Copilot mistake breaks one method, not the tool, and a TA can read every group's code in a minute.
-- **Fixed, tested engine.** `tests/test_theory.py` checks the engine against the course formulas: PER = 1 − (1 − BER)^n, the stop-and-wait transfer time, N·p·(1 − p)^(N−1) for slotted ALOHA, and the Problem Set 2, Problem 2(c) answer. `tests/test_mm7.py` checks the layer engine: residual loss PER^(K+1) and the expected number of ARQ attempts.
-- **Self-checks.** `check_mm5()`, `check_mm6_aloha()`, `check_mm7_encapsulation()` and `check_mm7_retry()` tell a group *what* is wrong, with a hint, never the code. From MM7 on, `check_answer("A1", x)` gives instant feedback on short objective answers; the keys are stored as salted hashes in `commsim/answer_keys.json` (a deterrent, not a lock: yes/no answers can be guessed).
+- **Fixed, tested engine.** `tests/test_theory.py` checks the engine against the course formulas: PER = 1 − (1 − BER)^n, the stop-and-wait transfer time, N·p·(1 − p)^(N−1) for slotted ALOHA, and the Problem Set 2, Problem 2(c) answer. `tests/test_mm7.py` checks the layer engine: residual loss PER^(K+1) and the expected number of ARQ attempts. `tests/test_mm8.py` checks count-to-infinity (15 rounds) and poisoned reverse (4), the receiver capacity of Problem Set 4, Problem 3, and goodput = window / round trip.
+- **Self-checks.** `check_mm5()`, `check_mm6_aloha()`, `check_mm7_encapsulation()`, `check_mm7_retry()`, `check_mm8_dv()` and `check_mm8_flow()` tell a group *what* is wrong, with a hint, never the code. From MM7 on, `check_answer("A1", x)` gives instant feedback on short objective answers; the keys are stored as salted hashes in `commsim/answer_keys.json` (a deterrent, not a lock: yes/no answers can be guessed).
 - **Copilot guardrails.** `.github/copilot-instructions.md` is read automatically by Copilot in VS Code. It limits edits to `student/`, describes the API, and asks Copilot not to give away experiment outcomes before the student has predicted them.
 - **Questions that resist outsourcing.** Each experiment is: write a prediction, run it, explain the difference. Copilot can run the experiment, but the prediction and the explanation are the student's.
 - **Different results per group** in the open parts (the frame-size choice, MAC designs, the challenge), which gives material for a short class discussion.
@@ -29,25 +29,30 @@ CommSim/
 │   ├── scenarios.py                point_to_point() for MM5, shared_uplink() for MM6
 │   ├── stack.py                    MM7 A: zoya_router_yoshi(), the 7-layer packet walk
 │   ├── twolayer.py                 MM7 B: two_layer_link(), ARQ at a higher and a lower layer
+│   ├── routing.py                  MM8 Q1: distance_vector(), chain_routing()
+│   ├── flow.py                     MM8 Q2: flow_control_link(), a fast sender and a slow receiver
 │   ├── results.py  plots.py  checks.py
 │   ├── answers.py  answer_keys.json   check_answer() with hashed answer keys
-│   └── reference/                  solutions released after each session (MM5: stop-and-wait, MM6: MACs)
+│   └── reference/                  solutions released after each session (MM5: stop-and-wait, MM6: MACs,
+│                                   MM7: packet_sizes and retry_decision)
 ├── student/
 │   ├── mm5_link.py                 SOLVED in this example (as a group would leave it)
 │   ├── mm6_mac.py                  SOLVED in this example
-│   └── mm7_layers.py               as handed out for MM7
+│   ├── mm7_layers.py               SOLVED in this example
+│   └── mm8_network.py              as handed out for MM8
 ├── labs/
 │   ├── MM5_lab.ipynb               completed example, with outputs and sample answers
 │   ├── MM6_lab.ipynb               completed example, with outputs and sample answers
-│   └── MM7_lab.ipynb               as handed out for MM7
+│   ├── MM7_lab.ipynb               as handed out (answers are not in the repo: see trial/)
+│   └── MM8_lab.ipynb               as handed out for MM8
 ├── instructor/
-│   ├── starters/                   MM5 and MM6 as handed out (notebooks and student files)
+│   ├── starters/                   MM5, MM6 and MM7 as handed out (notebooks and student files)
 │   └── preview/                    HTML exports of the executed labs (open in a browser)
 ├── tests/                          engine vs. lecture formulas
-└── trial/                          NOT IN GIT: MM7 solutions, answers and the executed trial run
+└── trial/                          NOT IN GIT: MM8 solutions, MM7/MM8 answers and the executed trial runs
 ```
 
-**State of this example:** MM5 and MM6 have been run: the student files and notebooks are answered, and the reference solutions are in `commsim/reference/`. MM7 is ready to hand out. Its solutions and expected answers are only in the gitignored `trial/` folder, so they never reach the public repo.
+**State of this example:** MM5, MM6 and MM7 have been run, and their reference solutions are in `commsim/reference/`. The MM5–MM7 student files are solved; the MM5 and MM6 notebooks are answered, while the MM7 notebook stays unanswered in the repo (its answered trial run is in `trial/`). MM8 is ready to hand out. Its solutions and expected answers are only in the gitignored `trial/` folder.
 
 ## What we give, and what students build
 
@@ -56,6 +61,7 @@ CommSim/
 | **MM5** | Engine; frames with real bits (preamble, length field, CRC); the Binary Symmetric Channel; the "Utopia" example protocol; `check_mm5` | `StopAndWaitSender` / `StopAndWaitReceiver`: ACKs, timeout, retransmission, 1-bit sequence number. Optional: a theory curve for experiment C2 |
 | **MM6** | Slotted shared channel; the MM5 reference link on top; `AlwaysTransmit` and `RoundRobinTDMA` examples; traffic models (saturated, Bernoulli, bursty); `check_mm6_aloha` | `SlottedAloha`; then two of: a sweep over N, `GroupedAloha` (Problem 2c), `BackoffAloha`; optional `MyMAC` challenge |
 | **MM7** | Zoya → router → Yoshi packet walk with a layer diagram; a two-layer (HL/LL) ARQ simulator in slots with a packet erasure channel, a timeline plot and per-layer counters; `check_mm7_encapsulation`, `check_mm7_retry`, `check_answer` | `packet_sizes` (packet size after each layer) and `retry_decision` (wait / retransmit / give up), used by both layers |
+| **MM8** | Distance-vector routing engine (synchronous rounds, infinity 16, optional poisoned reverse) with a table and plot; a sender / slow-receiver simulator with a receiver buffer, window updates and a round trip; `check_mm8_dv`, `check_mm8_flow` | `dv_update` (Bellman-Ford update for one router); `advertised_window` and `may_send` |
 
 ## MM5 session (30 min)
 
@@ -97,15 +103,41 @@ Built from the colleague's proposal and anchored in Problem Set 7. Rhythm: predi
 
 All answers that depend on simulation use `seed=7`, so every group gets the same numbers. Problem 1(a) and 1(d) (why layering; cross-layer design) stay on paper.
 
-**Trial run.** `.venv/bin/python trial/run_trial.py` regenerates `commsim/answer_keys.json` (B2 is computed from the simulation), runs the notebook as a student would in a sandbox with the solved student file, and runs the untouched handout to list the errors students see before writing code. Rerun it after any change to the engine or the notebook, then commit the new `answer_keys.json`.
+## MM8 session (30 min)
 
-## How it grows (MM8 onwards)
+Built from the colleague's MM8/MM9 question proposal: two questions of 15 minutes, each anchored in Problem Set 4 (Fall 2026 text, Fall 2025 header) with one Copilot task and a checker. Expected answers: `trial/MM8_lab_trial.ipynb` (local only). Question ids are prefixed (`check_answer("MM8-1a", ...)`) so they cannot clash with MM9.
+
+| Part | Min | Students do | Problem Set 4 |
+|---|---|---|---|
+| Q1 task | 4 | Copilot writes `dv_update`; `check_mm8_dv` (on other examples, so it does not give away 1a) | 1 |
+| 1a | 3 | Run `dv_update` on Problem 2: C's new table | 2 |
+| 1b | 4 | Predict, then fail R3–Yoshi on the chain Zoya–R1–R2–R3–Yoshi: count to infinity in the table and plot | |
+| 1c | 4 | Poisoned reverse; short explanation | |
+| Q2 task | 3 | Copilot writes `advertised_window` and `may_send`; `check_mm8_flow` | |
+| 2a | 4 | Problem 3 as given, then 8 copies without flow control: capacity and drop fraction | 3 |
+| 2b | 3 | The same with flow control: drops and goodput | 3 |
+| 2c | 5 | 10 µs round trip: goodput with a window of 64; students write a sweep for the smallest window that reaches 1 Gbit/s | |
+
+`dv_update` takes the router's own name as a first argument, `dv_update(me, link_costs, neighbour_vectors)`, which the proposal's two-argument version cannot do without (it must know which destination is itself). The engine caps distances at infinity, so students do not handle 16 themselves. Ties go to the first neighbour in `link_costs`.
+
+**Points where the official materials disagree with the lab** (from the proposal, plus one found here):
+
+- Problem Set 4, Problem 3: the text says the copies "can occur simultaneously", but the solution counts each copy as 10 extra instructions. The lab follows the solution and says so in the notebook.
+- Problem Set 4, Problem 2 solution: the vector "via D" is printed as (19, 15, 9, 3, 9, 10); D's vector + 3 is (19, 15, 9, 3, 12, 13). The final table is unaffected.
+- Problem Set 4, Problem 1 (challenge): iteration 4 lists D as C's predecessor, but via D the cost is 6; it should be B. Not used in the lab.
+
+## Trial runs
+
+`.venv/bin/python trial/run_trial.py` (or `... run_trial.py mm8` for one lab) regenerates `commsim/answer_keys.json` for all labs (some answers are computed from the simulation), runs each notebook as a student would in a sandbox with solved student files, and runs each handout to list the errors students see before writing code. Rerun it after any change to an engine or a notebook, then commit the new `answer_keys.json`. The plain-text answers live in `trial/answers_mm7.py` and `trial/answers_mm8.py`.
+
+When a session is over, release its solution: move it into `commsim/reference/`, copy the handout files to `instructor/starters/`, solve the student file, and point the tests at the reference (as done for MM7).
+
+## How it grows (MM9 onwards)
 
 The interfaces that later lectures need are already in place: addresses in the frame header, a configurable number of sequence bits, a broadcast medium with a `promiscuous` flag, and a physical layer behind one `corrupt(bits)` method.
 
 | Lecture | Framework adds | Students build | Question it unlocks |
 |---|---|---|---|
-| MM8 Network, transport | Routers with routing tables; a bottleneck queue | Distance-vector routing; sliding window, then AIMD congestion control | How large must the window be for Mars (MM5 C2 again)? Do two AIMD flows converge to a fair share? |
 | MM9 Security | Eve, a node that hears everything on the medium | Encryption and an integrity tag between application and link; Diffie-Hellman over the simulated link | What can Eve read or change before and after? What does security cost in overhead? |
 | MM10 Modulation, coding | `ModulatedChannel` replaces the bit-flip channel, behind the same interface | Mapper/demapper for BPSK, QPSK, 16-QAM; a simple channel code | BER vs. Eb/N0 compared with the Q-function formulas; MM5's best frame size, now as a function of SNR |
 | MM11 Waveforms | Sample-level physical layer | Pulse shaping, matched filter | Eye diagrams, ISI, and their effect on everything above |
@@ -116,10 +148,10 @@ After each session, the reference solution goes into `commsim/reference/`. The n
 ## Practical notes
 
 - **Setup:** Python 3.10+, VS Code with the Python, Jupyter and Copilot extensions, `pip install -r requirements.txt`. Recommend that students do this before the first session.
-- **Run times:** the whole MM5 lab runs in about 20 s, MM6 in about 20 s, MM7 in a few seconds.
+- **Run times:** the whole MM5 lab runs in about 20 s, MM6 in about 20 s, MM7 in a few seconds, MM8 in about 10 s (a 200,000-packet flow run takes about 0.3 s, so the 2c sweep is quick).
 - **Preparation per lecture:** one engine extension, one student file with stubs and specifications, one notebook, one self-check, and tests against the lecture formulas. The whole engine for MM5 and MM6 is about 1,250 lines including comments.
 - **Not yet tried with students.** Before rolling it out, it's worth a dry run with one or two students to check the 30-minute budget, especially how long Copilot takes on Part B.
-- **Run the tests:** `python -m pytest tests` (about 7 s). The two-layer tests need the solved MM7 file in `trial/`, and are skipped without it.
+- **Run the tests:** `python -m pytest tests` (about 7 s). The MM8 tests that need student functions use the solved file in `trial/`, and are skipped without it.
 
 ## Small modelling choices to know about
 
@@ -128,3 +160,4 @@ After each session, the reference solution goes into `commsim/reference/`. The n
 - An ARQ timer starts when the frame actually goes on air, not when it is handed to the MAC.
 - MM7 Part B runs in slots, separately from the MM5/MM6 bit-level engine: every frame (DATA or ACK) is lost with probability PER, one LL attempt takes 2 slots, and LL ACKs travel on a feedback channel next to the data. K counts *retransmissions* (Lecture 7 notes), so K_LL = 2 means at most 3 attempts. The LL is a stop-and-wait like the MM5 reference, extended with a retry limit; students' own MM5 classes do not plug in here.
 - In MM7, an HL retransmission is *premature* if Zoya's LL still holds an earlier copy of that packet, and *unnecessary* if an earlier copy reached Yoshi anyway. With T_HL = 7, a few premature retries remain, because a new packet can wait in the LL queue behind a stale copy of the previous packet. This is worth mentioning when students ask.
+- MM8 flow control: each time the receiver finishes a packet, it sends a window update (packets arrived so far and `buffer − queued`) that arrives half a round trip later; the sender may send while `sent − acked < window`. Goodput is measured from the first arrival to the last finished packet. A window slot is held for transmission + round trip + processing = 10.104 µs, so 64 packets give 0.405 Gbit/s and 158 is the smallest window that reaches 1 Gbit/s.

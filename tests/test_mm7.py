@@ -1,26 +1,13 @@
-"""The MM7 layer engine must agree with the lecture formulas.
-
-The two-layer tests need a working retry rule. MM7 solutions are kept out of the public
-repo, so these tests use trial/mm7_layers_solved.py and are skipped when it is missing.
-"""
-import importlib.util
-from pathlib import Path
-
+"""The MM7 layer engine must agree with the lecture formulas."""
 import pytest
 
 from commsim import two_layer_link, zoya_router_yoshi
-
-SOLVED = Path(__file__).resolve().parents[1] / "trial" / "mm7_layers_solved.py"
+from commsim.reference import retry_decision
 
 
 @pytest.fixture(scope="module")
 def retry():
-    if not SOLVED.exists():
-        pytest.skip("trial/mm7_layers_solved.py not present (instructor-only)")
-    spec = importlib.util.spec_from_file_location("mm7_solved", SOLVED)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod.retry_decision
+    return retry_decision
 
 
 def test_encapsulation_sizes():

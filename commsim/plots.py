@@ -294,3 +294,58 @@ def layer_timeline(results, n_slots=30, start=0, ax=None):
     ax.legend(handles=handles, loc="upper left", bbox_to_anchor=(1.0, 1.0), frameon=False, fontsize=8)
     ax.set_title(results.scenario, color=INK, fontsize=9.5, loc="left")
     return ax
+
+
+# ---------------------------------------------------------------- MM8: routing and flow control
+
+def routing_plot(results, ax=None):
+    """Each router's distance to the destination, before the failure and after every round
+    (distance_vector / chain_routing runs). The dashed line is infinity. Lines are shifted
+    up or down a little so that routers with the same distance stay visible."""
+    if ax is None:
+        _, ax = plt.subplots(figsize=(7.5, 3.8))
+    rounds = list(range(len(results.history) + 1))
+    nodes = [n for n in results.nodes if n != results.destination]
+    for i, n in enumerate(nodes):
+        shift = 0.12 * (i - (len(nodes) - 1) / 2)
+        ax.plot(rounds, [d + shift for d in results.distances(n)], label=n, color=SERIES[i % len(SERIES)],
+                linewidth=2, marker="o", markersize=4, drawstyle="steps-post")
+    ax.axhline(results.infinity, color=MUTED, linestyle="--", linewidth=1.2)
+    ax.text(rounds[-1], results.infinity, " infinity (unreachable)", va="bottom", ha="right",
+            fontsize=8, color=MUTED)
+    ax.set_xticks(rounds)
+    ax.set_xticklabels(["before"] + [str(r) for r in rounds[1:]], fontsize=8)
+    ax.set_xlabel("round after the failure", color=MUTED)
+    ax.set_ylabel(f"distance to {results.destination}", color=MUTED)
+    ax.set_ylim(0, results.infinity + 1.5)
+    ax.set_title(results.scenario, color=INK, fontsize=10, loc="left")
+    _style(ax)
+    ax.legend(frameon=False, fontsize=9, loc="center left", bbox_to_anchor=(1.0, 0.5))
+    return ax
+
+
+def flow_plot(results, ax=None):
+    """Packets in the receiver buffer at the start of the run, with drops marked
+    (flow_control_link runs)."""
+    if ax is None:
+        _, ax = plt.subplots(figsize=(8, 3.4))
+    tr = results.trace
+    if not tr:
+        raise ValueError("nothing was traced: no packet arrived in the first trace_ns")
+    t = [x[0] / 1000 for x in tr]
+    q = [x[1] for x in tr]
+    ax.step(t, q, where="post", color=SERIES[0], linewidth=1.8, label="packets in the buffer")
+    drops = [(x[0] / 1000, x[1]) for x in tr if x[2] == "drop"]
+    if drops:
+        ax.plot(*zip(*drops), linestyle="none", marker="x", color=STATUS["collision"], markersize=6,
+                label="dropped packet")
+    ax.axhline(results.params["buffer_packets"], color=MUTED, linestyle="--", linewidth=1.2)
+    ax.text(t[-1], results.params["buffer_packets"], "buffer size ", ha="right", va="bottom",
+            fontsize=8, color=MUTED)
+    ax.set_ylim(0, results.params["buffer_packets"] * 1.2 + 1)
+    ax.set_xlabel("time (µs)", color=MUTED)
+    ax.set_ylabel("packets in the buffer", color=MUTED)
+    ax.set_title(results.scenario, color=INK, fontsize=9, loc="left")
+    _style(ax)
+    ax.legend(frameon=False, fontsize=9, loc="lower right")
+    return ax
