@@ -4,7 +4,7 @@ This repository is a teaching simulator for the course *Communication in Electro
 
 ## What you may edit
 
-- Only files in `student/` (for example `student/mm5_link.py`, `student/mm6_mac.py`, `student/mm7_layers.py`, `student/mm8_network.py`) and the lab notebooks in `labs/`.
+- Only files in `student/` (for example `student/mm5_link.py`, `student/mm6_mac.py`, `student/mm7_layers.py`, `student/mm8_network.py`, `student/mm9_security.py`) and the lab notebooks in `labs/`.
 - **Never edit `commsim/`.** It is the fixed, tested engine. If something seems to require changing it, the student's approach is probably wrong. Say so, and suggest a solution inside `student/`.
 - Do not create new files outside `student/` and `labs/`.
 
@@ -76,6 +76,17 @@ may_send(in_flight, window) -> bool                                       # send
 
 The engines (`chain_routing`, `distance_vector`, `flow_control_link`) run them and handle rounds, infinity, poisoned reverse, timing and buffers. Do not reimplement those parts in `student/`. For question 2c, the student may ask for a sweep over `buffer_packets`; write it, but let them read off the answer.
 
+**Security (MM9).** Four plain functions in `student/mm9_security.py`, specified in their docstrings:
+
+```python
+cbc_encrypt(blocks, key, iv) -> list        # use toy_encrypt_block and xor_bytes from commsim.crypto
+cbc_decrypt(blocks, key, iv) -> list        # use toy_decrypt_block and xor_bytes
+respond(K, challenge, public_value) -> str  # hashlib.sha256(K + challenge + str(public_value).encode()).hexdigest()
+verify(K, challenge, public_value, response) -> bool
+```
+
+Use only the given toy cipher; do not import a crypto library or write a new block cipher. The toy cipher is for teaching and is not secure: say so if a student wants to reuse it. Diffie-Hellman (`dh_public`, `dh_shared`) and the chat with Mallory (`dh_chat`) are given.
+
 **Experiments.**
 
 ```python
@@ -88,9 +99,11 @@ r = two_layer_link(retry_decision, reliability="LL" | "HL" | "both", per=0.2,
 r = chain_routing(dv_update, fail=("R3", "Yoshi"), poisoned_reverse=False)    # MM8 Q1
 r = flow_control_link(copies=4, rtt_us=10, buffer_packets=64,
                       flow_control=(advertised_window, may_send))            # MM8 Q2
+c = cbc_encrypt(sensor_log(), DEMO_KEY, DEMO_IV)                              # MM9 Q1
+r = dh_chat(mallory=True, authentication=(respond, verify))                   # MM9 Q2
 sequence_diagram(r); slot_grid(r); sweep_plot(x, {"label": y}, "x label", "y label")
 layer_diagram(t); layer_timeline(r, start=0, n_slots=30); compare_runs({"label": r})
-routing_plot(r); flow_plot(r)
+routing_plot(r); flow_plot(r); block_grid({"ECB": c}); damage_plot({...}); chat_diagram(r)
 ```
 
 Every scenario function has a docstring that lists all its parameters. Read it instead of guessing parameter names.

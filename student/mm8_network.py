@@ -3,6 +3,10 @@
 This is the only file you change in the MM8 lab (together with the lab notebook).
 The routing and flow-control engines in commsim/ are given: here you write three small
 functions. Use Copilot if you like, but read what it writes.
+
+STATUS IN THIS EXAMPLE: solved. This is what a group's file could look like at the
+end of the MM8 session. What students were handed at the start is kept in
+instructor/starters/mm8_network.py.
 """
 
 
@@ -31,7 +35,19 @@ def dv_update(me, link_costs, neighbour_vectors):
     (The engine handles "infinity": any distance of 16 or more means unreachable.)
     Then run check_mm8_dv(dv_update) in the notebook.
     """
-    raise NotImplementedError("Question 1: implement dv_update")
+    destinations = {me} | {d for vector in neighbour_vectors.values() for d in vector}
+    distances, next_hops = {}, {}
+    for d in destinations:
+        if d == me:
+            distances[d], next_hops[d] = 0, None
+            continue
+        for n, cost in link_costs.items():
+            if d not in neighbour_vectors.get(n, {}):
+                continue                        # this neighbour does not know d
+            total = cost + neighbour_vectors[n][d]
+            if d not in distances or total < distances[d]:     # strict <: first neighbour wins ties
+                distances[d], next_hops[d] = total, n
+    return distances, next_hops
 
 
 # =============================================================================
@@ -46,7 +62,7 @@ def advertised_window(buffer_size, queued):
 
     Specification: return the free space in the buffer (never less than 0).
     """
-    raise NotImplementedError("Question 2: implement advertised_window")
+    return max(0, buffer_size - queued)
 
 
 def may_send(in_flight, window):
@@ -58,4 +74,4 @@ def may_send(in_flight, window):
     Specification: True while fewer than `window` packets are in flight, otherwise False.
     Then run check_mm8_flow(advertised_window, may_send) in the notebook.
     """
-    raise NotImplementedError("Question 2: implement may_send")
+    return in_flight < window

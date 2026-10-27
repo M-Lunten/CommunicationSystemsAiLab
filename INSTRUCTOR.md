@@ -1,6 +1,6 @@
 # CommSim: instructor overview
 
-*A pilot for MM5–MM8 of Communication in Electronic Systems, built to show how one simulation framework could grow with Part 2 of the course.*
+*A pilot for MM5–MM9 of Communication in Electronic Systems, built to show how one simulation framework could grow with Part 2 of the course.*
 
 ## The idea
 
@@ -11,8 +11,8 @@ Each lab takes **about 30 minutes**, after the regular exercises. The pieces stu
 ## Why this is not "just prompting"
 
 - **Small editable part.** Students edit 20–50 lines in one file. A Copilot mistake breaks one method, not the tool, and a TA can read every group's code in a minute.
-- **Fixed, tested engine.** `tests/test_theory.py` checks the engine against the course formulas: PER = 1 − (1 − BER)^n, the stop-and-wait transfer time, N·p·(1 − p)^(N−1) for slotted ALOHA, and the Problem Set 2, Problem 2(c) answer. `tests/test_mm7.py` checks the layer engine: residual loss PER^(K+1) and the expected number of ARQ attempts. `tests/test_mm8.py` checks count-to-infinity (15 rounds) and poisoned reverse (4), the receiver capacity of Problem Set 4, Problem 3, and goodput = window / round trip.
-- **Self-checks.** `check_mm5()`, `check_mm6_aloha()`, `check_mm7_encapsulation()`, `check_mm7_retry()`, `check_mm8_dv()` and `check_mm8_flow()` tell a group *what* is wrong, with a hint, never the code. From MM7 on, `check_answer("A1", x)` gives instant feedback on short objective answers; the keys are stored as salted hashes in `commsim/answer_keys.json` (a deterrent, not a lock: yes/no answers can be guessed).
+- **Fixed, tested engine.** `tests/test_theory.py` checks the engine against the course formulas: PER = 1 − (1 − BER)^n, the stop-and-wait transfer time, N·p·(1 − p)^(N−1) for slotted ALOHA, and the Problem Set 2, Problem 2(c) answer. `tests/test_mm7.py` checks the layer engine: residual loss PER^(K+1) and the expected number of ARQ attempts. `tests/test_mm8.py` checks count-to-infinity (15 rounds) and poisoned reverse (4), the receiver capacity of Problem Set 4, Problem 3, and goodput = window / round trip. `tests/test_mm9.py` checks the toy cipher, ECB/CBC error spreading, the IV bit-flip attack, Diffie-Hellman against the official Problem 6 solution, and the man in the middle.
+- **Self-checks.** `check_mm5()`, `check_mm6_aloha()`, `check_mm7_encapsulation()`, `check_mm7_retry()`, `check_mm8_dv()`, `check_mm8_flow()`, `check_mm9_cbc()` and `check_mm9_auth()` tell a group *what* is wrong, with a hint, never the code. From MM7 on, `check_answer("A1", x)` gives instant feedback on short objective answers; the keys are stored as salted hashes in `commsim/answer_keys.json` (a deterrent, not a lock: yes/no answers can be guessed).
 - **Copilot guardrails.** `.github/copilot-instructions.md` is read automatically by Copilot in VS Code. It limits edits to `student/`, describes the API, and asks Copilot not to give away experiment outcomes before the student has predicted them.
 - **Questions that resist outsourcing.** Each experiment is: write a prediction, run it, explain the difference. Copilot can run the experiment, but the prediction and the explanation are the student's.
 - **Different results per group** in the open parts (the frame-size choice, MAC designs, the challenge), which gives material for a short class discussion.
@@ -31,28 +31,32 @@ CommSim/
 │   ├── twolayer.py                 MM7 B: two_layer_link(), ARQ at a higher and a lower layer
 │   ├── routing.py                  MM8 Q1: distance_vector(), chain_routing()
 │   ├── flow.py                     MM8 Q2: flow_control_link(), a fast sender and a slow receiver
+│   ├── crypto.py                   MM9 Q1: toy block cipher, ECB, sensor log, bit flips, Eve's IV attack
+│   ├── keyexchange.py              MM9 Q2: Diffie-Hellman, dh_chat() with and without Mallory
 │   ├── results.py  plots.py  checks.py
 │   ├── answers.py  answer_keys.json   check_answer() with hashed answer keys
 │   └── reference/                  solutions released after each session (MM5: stop-and-wait, MM6: MACs,
-│                                   MM7: packet_sizes and retry_decision)
+│                                   MM7: packet_sizes and retry_decision, MM8: dv_update and flow control)
 ├── student/
 │   ├── mm5_link.py                 SOLVED in this example (as a group would leave it)
 │   ├── mm6_mac.py                  SOLVED in this example
 │   ├── mm7_layers.py               SOLVED in this example
-│   └── mm8_network.py              as handed out for MM8
+│   ├── mm8_network.py              SOLVED in this example
+│   └── mm9_security.py             as handed out for MM9
 ├── labs/
 │   ├── MM5_lab.ipynb               completed example, with outputs and sample answers
 │   ├── MM6_lab.ipynb               completed example, with outputs and sample answers
 │   ├── MM7_lab.ipynb               as handed out (answers are not in the repo: see trial/)
-│   └── MM8_lab.ipynb               as handed out for MM8
+│   ├── MM8_lab.ipynb               as handed out (answers are not in the repo: see trial/)
+│   └── MM9_lab.ipynb               as handed out for MM9
 ├── instructor/
-│   ├── starters/                   MM5, MM6 and MM7 as handed out (notebooks and student files)
+│   ├── starters/                   MM5 to MM8 as handed out (notebooks and student files)
 │   └── preview/                    HTML exports of the executed labs (open in a browser)
 ├── tests/                          engine vs. lecture formulas
-└── trial/                          NOT IN GIT: MM8 solutions, MM7/MM8 answers and the executed trial runs
+└── trial/                          NOT IN GIT: MM9 solutions, MM7–MM9 answers and the executed trial runs
 ```
 
-**State of this example:** MM5, MM6 and MM7 have been run, and their reference solutions are in `commsim/reference/`. The MM5–MM7 student files are solved; the MM5 and MM6 notebooks are answered, while the MM7 notebook stays unanswered in the repo (its answered trial run is in `trial/`). MM8 is ready to hand out. Its solutions and expected answers are only in the gitignored `trial/` folder.
+**State of this example:** MM5 to MM8 have been run, and their reference solutions are in `commsim/reference/`. The MM5–MM8 student files are solved; the MM5 and MM6 notebooks are answered, while the MM7 and MM8 notebooks stay unanswered in the repo (their answered trial runs are in `trial/`). MM9 is ready to hand out. Its solutions and expected answers are only in the gitignored `trial/` folder.
 
 ## What we give, and what students build
 
@@ -62,6 +66,7 @@ CommSim/
 | **MM6** | Slotted shared channel; the MM5 reference link on top; `AlwaysTransmit` and `RoundRobinTDMA` examples; traffic models (saturated, Bernoulli, bursty); `check_mm6_aloha` | `SlottedAloha`; then two of: a sweep over N, `GroupedAloha` (Problem 2c), `BackoffAloha`; optional `MyMAC` challenge |
 | **MM7** | Zoya → router → Yoshi packet walk with a layer diagram; a two-layer (HL/LL) ARQ simulator in slots with a packet erasure channel, a timeline plot and per-layer counters; `check_mm7_encapsulation`, `check_mm7_retry`, `check_answer` | `packet_sizes` (packet size after each layer) and `retry_decision` (wait / retransmit / give up), used by both layers |
 | **MM8** | Distance-vector routing engine (synchronous rounds, infinity 16, optional poisoned reverse) with a table and plot; a sender / slow-receiver simulator with a receiver buffer, window updates and a round trip; `check_mm8_dv`, `check_mm8_flow` | `dv_update` (Bellman-Ford update for one router); `advertised_window` and `may_send` |
+| **MM9** | A toy 8-byte block cipher (4-round Feistel, labelled not secure) with ECB; a sensor log, bit flips, lost blocks and Eve's IV bit-flip attack; Diffie-Hellman with the Problem 6 numbers; a chat simulator with Mallory in the middle; block-grid, damage and sequence-chart plots; `check_mm9_cbc`, `check_mm9_auth` | `cbc_encrypt` and `cbc_decrypt`; `respond` and `verify` (SHA-256 keyed with the pre-shared key, bound to the sender's own public value) |
 
 ## MM5 session (30 min)
 
@@ -126,19 +131,36 @@ Built from the colleague's MM8/MM9 question proposal: two questions of 15 minute
 - Problem Set 4, Problem 2 solution: the vector "via D" is printed as (19, 15, 9, 3, 9, 10); D's vector + 3 is (19, 15, 9, 3, 12, 13). The final table is unaffected.
 - Problem Set 4, Problem 1 (challenge): iteration 4 lists D as C's predecessor, but via D the cost is 6; it should be B. Not used in the lab.
 
+## MM9 session (30 min)
+
+From the same proposal: two questions of 15 minutes, anchored in Problem Set 5. Expected answers: `trial/MM9_lab_trial.ipynb` (local only). All simulated answers use fixed keys, IVs and seeds.
+
+| Part | Min | Students do | Problem Set 5 |
+|---|---|---|---|
+| Q1 task | 4 | Copilot writes `cbc_encrypt` / `cbc_decrypt` on the given toy cipher; `check_mm9_cbc` (test vector and round trip) | 1 |
+| 1a | 3 | 64-block sensor log with 3 readings: distinct ciphertext blocks with ECB and CBC, and the block grid | 1 |
+| 1b | 4 | One flipped bit, or one lost block: damaged plaintext blocks with ECB and CBC | 1 |
+| 1c | 4 | Eve flips IV bits to turn "0100" into "0900"; with and without fixing the unkeyed CRC | |
+| 2a | 3 | Diffie-Hellman by hand (p = 23, g = 5, a = 6, b = 15), checked with `dh_public` / `dh_shared`; optionally the Problem 6 numbers | 6 |
+| 2b | 3 | Mallory in the middle: different keys, 10 of 10 messages read, nobody notices | 3 |
+| Q2 task + 2c | 8 | Copilot writes `respond` / `verify`; `check_mm9_auth`; the handshake fails with Mallory and succeeds without her | 4 |
+
+Chat messages are encrypted with a SHA-256 keystream, not with the students' CBC, so the engine does not contain the answer to Question 1. In 1c, the smart-meter message is one block (4 digits + CRC-32), so Eve only needs the IV: flipping IV bits flips the same bits in the first plaintext block, and nothing else is damaged.
+
+**Point where the official solution disagrees with the lab:** Problem Set 5, Problem 1: the solution says a lost CBC block means "we cannot decrypt the following blocks". Only the next block is damaged (1b shows it, and the notebook asks students to explain why).
+
 ## Trial runs
 
-`.venv/bin/python trial/run_trial.py` (or `... run_trial.py mm8` for one lab) regenerates `commsim/answer_keys.json` for all labs (some answers are computed from the simulation), runs each notebook as a student would in a sandbox with solved student files, and runs each handout to list the errors students see before writing code. Rerun it after any change to an engine or a notebook, then commit the new `answer_keys.json`. The plain-text answers live in `trial/answers_mm7.py` and `trial/answers_mm8.py`.
+`.venv/bin/python trial/run_trial.py` (or `... run_trial.py mm9` for one lab) regenerates `commsim/answer_keys.json` for all labs (some answers are computed from the simulation), runs each notebook as a student would in a sandbox with solved student files, and runs each handout to list the errors students see before writing code. Rerun it after any change to an engine or a notebook, then commit the new `answer_keys.json`. The plain-text answers live in `trial/answers_mm7.py`, `answers_mm8.py` and `answers_mm9.py`.
 
-When a session is over, release its solution: move it into `commsim/reference/`, copy the handout files to `instructor/starters/`, solve the student file, and point the tests at the reference (as done for MM7).
+When a session is over, release its solution: move it into `commsim/reference/`, copy the handout files to `instructor/starters/`, solve the student file, and point the tests at the reference (as done for MM7 and MM8).
 
-## How it grows (MM9 onwards)
+## How it grows (MM10 onwards)
 
 The interfaces that later lectures need are already in place: addresses in the frame header, a configurable number of sequence bits, a broadcast medium with a `promiscuous` flag, and a physical layer behind one `corrupt(bits)` method.
 
 | Lecture | Framework adds | Students build | Question it unlocks |
 |---|---|---|---|
-| MM9 Security | Eve, a node that hears everything on the medium | Encryption and an integrity tag between application and link; Diffie-Hellman over the simulated link | What can Eve read or change before and after? What does security cost in overhead? |
 | MM10 Modulation, coding | `ModulatedChannel` replaces the bit-flip channel, behind the same interface | Mapper/demapper for BPSK, QPSK, 16-QAM; a simple channel code | BER vs. Eb/N0 compared with the Q-function formulas; MM5's best frame size, now as a function of SNR |
 | MM11 Waveforms | Sample-level physical layer | Pulse shaping, matched filter | Eye diagrams, ISI, and their effect on everything above |
 | MM12 Workshop | — | The full stack | End-to-end design under constraints |
@@ -148,10 +170,10 @@ After each session, the reference solution goes into `commsim/reference/`. The n
 ## Practical notes
 
 - **Setup:** Python 3.10+, VS Code with the Python, Jupyter and Copilot extensions, `pip install -r requirements.txt`. Recommend that students do this before the first session.
-- **Run times:** the whole MM5 lab runs in about 20 s, MM6 in about 20 s, MM7 in a few seconds, MM8 in about 10 s (a 200,000-packet flow run takes about 0.3 s, so the 2c sweep is quick).
+- **Run times:** the whole MM5 lab runs in about 20 s, MM6 in about 20 s, MM7 in a few seconds, MM8 in about 10 s (a 200,000-packet flow run takes about 0.3 s, so the 2c sweep is quick), MM9 in a few seconds.
 - **Preparation per lecture:** one engine extension, one student file with stubs and specifications, one notebook, one self-check, and tests against the lecture formulas. The whole engine for MM5 and MM6 is about 1,250 lines including comments.
 - **Not yet tried with students.** Before rolling it out, it's worth a dry run with one or two students to check the 30-minute budget, especially how long Copilot takes on Part B.
-- **Run the tests:** `python -m pytest tests` (about 7 s). The MM8 tests that need student functions use the solved file in `trial/`, and are skipped without it.
+- **Run the tests:** `python -m pytest tests` (about 7 s). The MM9 tests that need student functions use the solved file in `trial/`, and are skipped without it.
 
 ## Small modelling choices to know about
 

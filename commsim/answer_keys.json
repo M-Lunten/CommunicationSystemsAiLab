@@ -159,5 +159,51 @@
   ],
   "format": "[goodput in Gbit/s, window in packets]",
   "decimals": 2
+ },
+ "MM9-1a": {
+  "hashes": [
+   "d01d73e95e296b6fe97c"
+  ],
+  "format": "[ECB, CBC]",
+  "decimals": 0
+ },
+ "MM9-1b": {
+  "hashes": [
+   "9cdc659df99adcafabe5"
+  ],
+  "format": "[ECB, CBC]",
+  "decimals": 0
+ },
+ "MM9-1c": {
+  "hashes": [
+   "2ea66bafe530c79d824a",
+   "9a8f81e98b8dbfc5bc0b",
+   "a863308d6778382832e4",
+   "df5f96ac655c7de913cd"
+  ],
+  "format": "[yes/no, yes/no]"
+ },
+ "MM9-2a": {
+  "hashes": [
+   "1a066df31342eb16cf67"
+  ],
+  "format": "[A, B, key]",
+  "decimals": 0
+ },
+ "MM9-2b": {
+  "hashes": [
+   "a0c6f2b292c5187aee87",
+   "f48261559f219689f323"
+  ],
+  "format": "[yes/no, number of messages]"
+ },
+ "MM9-2c": {
+  "hashes": [
+   "1ce5deac327d85a8c141",
+   "25a5dc2477083071162d",
+   "5dfbf9c362ae90984632",
+   "f227157f700751aa7451"
+  ],
+  "format": "[yes/no, yes/no]"
  }
 }

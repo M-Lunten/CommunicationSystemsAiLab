@@ -211,3 +211,78 @@ def check_mm8_flow(advertised_window, may_send):
                       "with flow control, no packet should ever arrive at a full buffer.")
     print("\nAll checks passed." if ok else "\nFix the failing checks and run again.")
     return ok
+
+
+def check_mm9_cbc(cbc_encrypt, cbc_decrypt):
+    """Checks CBC encryption and decryption (Lab MM9, question 1)."""
+    from .crypto import DEMO_IV, DEMO_KEY, ecb_encrypt, sensor_log
+    key, iv = b"check-key", bytes(range(8))
+    plain = [b"ABCDEFGH", b"ABCDEFGH", b"12345678"]
+    vector = [bytes.fromhex(h) for h in ("69d9b3824d290559", "efeef59f1c79370e", "d5cf130fe4668cbc")]
+    given = list(plain)
+    try:
+        cipher = cbc_encrypt(given, key, iv)
+        back = cbc_decrypt(list(vector), key, iv)
+    except NotImplementedError:
+        print("FAIL  cbc_encrypt or cbc_decrypt is not implemented yet")
+        return False
+    ok = True
+    cipher = list(cipher) if isinstance(cipher, (list, tuple)) else cipher
+    if given != plain:
+        return _report("0 inputs", False, "cbc_encrypt changed its input list",
+                       "build a new list of ciphertext blocks.")
+    first_ok = isinstance(cipher, list) and len(cipher) == 3 and cipher[0] == vector[0]
+    ok &= _report("1 first block", first_ok, "matches the test vector" if first_ok else
+                  f"got {cipher[0].hex() if isinstance(cipher, list) and cipher else cipher!r}",
+                  "C[0] = toy_encrypt_block(xor_bytes(P[0], iv), key).")
+    chain_ok = first_ok and cipher == vector
+    ok &= _report("2 chaining", chain_ok, "matches the test vector" if chain_ok else
+                  "later blocks differ from the test vector",
+                  "each next block is XORed with the previous CIPHERTEXT block before encrypting. "
+                  "Note that P[0] and P[1] are equal here, but C[0] and C[1] must differ.")
+    dec_ok = list(back) == plain
+    ok &= _report("3 decryption", dec_ok, "recovers the test plaintext" if dec_ok else f"got {back}",
+                  "P[i] = toy_decrypt_block(C[i], key) XOR C[i-1], with the IV for the first block.")
+    if ok:
+        log = sensor_log()
+        rt = cbc_decrypt(cbc_encrypt(log, DEMO_KEY, DEMO_IV), DEMO_KEY, DEMO_IV) == log
+        other_iv = cbc_encrypt(log, DEMO_KEY, bytes(8))[0] != cbc_encrypt(log, DEMO_KEY, DEMO_IV)[0]
+        not_ecb = cbc_encrypt(log, DEMO_KEY, DEMO_IV) != ecb_encrypt(log, DEMO_KEY)
+        ok &= _report("4 round trip on the sensor log", rt and other_iv and not_ecb,
+                      "decrypt(encrypt(log)) == log, and the IV matters",
+                      "check that both functions use the same key and IV, and that the IV is used.")
+    print("\nAll checks passed." if ok else "\nFix the failing checks and run again.")
+    return ok
+
+
+def check_mm9_auth(respond, verify):
+    """Checks the challenge-response functions (Lab MM9, question 2)."""
+    from .keyexchange import dh_chat
+    K, c, pub = b"K-check", b"\x00\x01challenge", 123456789
+    known = "95700394c23a19fc2389b6297352476fddd304c874e3062897838b266649079f"
+    try:
+        r = respond(K, c, pub)
+        good = verify(K, c, pub, known)
+        bad = [verify(K2, c2, p2, known) for K2, c2, p2 in
+               ((b"wrong key", c, pub), (K, b"other challenge", pub), (K, c, pub + 1))]
+    except NotImplementedError:
+        print("FAIL  respond or verify is not implemented yet")
+        return False
+    ok = _report("1 respond", r == known, "matches the known value" if r == known else f"returned {r!r}",
+                 "hash K + challenge + str(public_value).encode() with hashlib.sha256 and return "
+                 ".hexdigest().")
+    ok &= _report("2 verify accepts", good is True, f"returned {good!r}",
+                  "verify must return True when the response is respond(K, challenge, public_value).")
+    ok &= _report("3 verify rejects", not any(bad),
+                  "rejects a wrong key, a wrong challenge and a wrong public value" if not any(bad)
+                  else "accepted a wrong key, challenge or public value",
+                  "recompute the expected response from the arguments and compare.")
+    if ok:
+        honest = dh_chat(authentication=(respond, verify))
+        attacked = dh_chat(mallory=True, authentication=(respond, verify), seed=5)
+        ok &= _report("4 in the simulator", honest.handshake_ok is True and attacked.handshake_ok is False,
+                      f"honest handshake {'succeeds' if honest.handshake_ok else 'fails'}, "
+                      f"attacked one {'fails' if attacked.handshake_ok is False else 'succeeds'}",
+                      "both sides must verify the response against the public value they received.")
+    print("\nAll checks passed." if ok else "\nFix the failing checks and run again.")
+    return ok

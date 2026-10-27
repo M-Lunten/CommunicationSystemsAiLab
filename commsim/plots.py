@@ -349,3 +349,83 @@ def flow_plot(results, ax=None):
     _style(ax)
     ax.legend(frameon=False, fontsize=9, loc="lower right")
     return ax
+
+
+# ---------------------------------------------------------------- MM9: security
+
+def block_grid(panels, cols=8):
+    """What Eve sees: every block as a coloured square, one colour per different block value.
+    `panels` is {title: list_of_blocks}. Equal blocks get equal colours (within a panel)."""
+    import matplotlib.colors as mcolors
+    n = len(panels)
+    fig, axes = plt.subplots(1, n, figsize=(3.4 * n, 3.6))
+    axes = [axes] if n == 1 else axes
+    palette = SERIES + ["#5e9fe6", "#f29c6f", "#6fd0a8", "#f4c45a"]
+    for ax, (title, blocks) in zip(axes, panels.items()):
+        values = list(dict.fromkeys(blocks))
+        rows = -(-len(blocks) // cols)
+        for i, b in enumerate(blocks):
+            k = values.index(b)
+            if len(values) <= len(palette):
+                colour = palette[k]
+            else:
+                h = int.from_bytes(b[:3], "big") / 2 ** 24
+                colour = mcolors.hsv_to_rgb((h, 0.55, 0.85))
+            ax.add_patch(plt.Rectangle((i % cols + 0.05, i // cols + 0.05), 0.9, 0.9, color=colour))
+        ax.set_xlim(0, cols)
+        ax.set_ylim(rows, 0)
+        ax.set_aspect("equal")
+        ax.axis("off")
+        ax.set_title(f"{title}\n{len(values)} different blocks", color=INK, fontsize=10)
+    return axes
+
+
+def damage_plot(cases, n_blocks=None):
+    """Which plaintext blocks arrive damaged. `cases` is {label: list_of_damaged_indices};
+    pass n_blocks for the total number of blocks."""
+    n_blocks = n_blocks or (max((max(v) for v in cases.values() if v), default=0) + 1)
+    fig, ax = plt.subplots(figsize=(min(14, 0.2 * n_blocks + 2.5), 0.45 * len(cases) + 1.0))
+    for r, (label, bad) in enumerate(cases.items()):
+        for i in range(n_blocks):
+            ax.add_patch(plt.Rectangle((i + 0.08, r + 0.12), 0.84, 0.76,
+                                       color=STATUS["collision"] if i in bad else STATUS["ok"],
+                                       alpha=0.9 if i in bad else 0.35))
+    ax.set_xlim(0, n_blocks)
+    ax.set_ylim(len(cases), 0)
+    ax.set_yticks([r + 0.5 for r in range(len(cases))])
+    ax.set_yticklabels([f"{k}  ({len(v)} damaged)" for k, v in cases.items()], fontsize=9, color=INK)
+    ax.set_xticks([i + 0.5 for i in range(0, n_blocks, 4)])
+    ax.set_xticklabels([str(i) for i in range(0, n_blocks, 4)], fontsize=8, color=MUTED)
+    ax.set_xlabel("plaintext block", color=MUTED)
+    for side in ax.spines.values():
+        side.set_visible(False)
+    ax.tick_params(length=0)
+    return ax
+
+
+def chat_diagram(results, max_messages=4, ax=None):
+    """Message sequence chart of a dh_chat run: Zoya, the router (or Mallory), Yoshi."""
+    mid = "Mallory" if results.mallory else "Router"
+    xs = {"Zoya": 0, mid: 1, "Yoshi": 2}
+    rows = [e for e in results.transcript if e[4] == "key"]
+    data = [e for e in results.transcript if e[4] == "data"][:2 * max_messages]
+    rows += data
+    if ax is None:
+        _, ax = plt.subplots(figsize=(7.5, 0.42 * len(rows) + 1.4))
+    for name, x in xs.items():
+        colour = STATUS["collision"] if name == "Mallory" else MUTED
+        ax.plot([x, x], [0, len(rows) + 0.3], color=colour, linewidth=2)
+        ax.text(x, -0.35, name, ha="center", va="bottom", fontsize=11, fontweight="bold",
+                color=STATUS["collision"] if name == "Mallory" else INK)
+    for y, (_, frm, to, label, kind) in enumerate(rows, start=1):
+        colour = SERIES[0] if kind == "key" else SERIES[2]
+        ax.annotate("", xy=(xs[to], y), xytext=(xs[frm], y),
+                    arrowprops=dict(arrowstyle="-|>", color=colour, linewidth=1.4))
+        ax.text((xs[frm] + xs[to]) / 2, y - 0.12, label, ha="center", va="bottom", fontsize=8, color=INK)
+    ax.set_ylim(len(rows) + 0.6, -0.8)
+    ax.set_xlim(-0.3, 2.3)
+    ax.axis("off")
+    status = ("" if results.handshake_ok is None else
+              "   handshake OK" if results.handshake_ok else "   handshake REJECTED")
+    ax.set_title(results.scenario + status, color=INK, fontsize=9, loc="left")
+    return ax
